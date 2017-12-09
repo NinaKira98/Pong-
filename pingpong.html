@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>repl.it</title>
+    <style type="text/css">
+      #canvas {
+    position: absolute;
+    top:0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin:auto;
+    border-top: 3px solid #1D3D3F;
+    border-bottom: 3px solid #1D3D3F;
+}
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="800" height="500" ></canvas>
+    
+    <audio autoplay loop>
+      <source src="http://www.freexmasmp3.com/files/ding-dong-merrily.mp3">
+    </audio>
+
+
+<script>
+  
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const img = new Image();
+img.src = 'http://onidj.com/wp-content/uploads/pink-snowflake-wallpaper-high-quality-resolution.jpg';
+
+///////////////////////////////////////////////////////////
+const gameData = {
+  left: {
+    x: 10,
+    y: 210,
+    width: 10,
+    height: 150,
+    yD: 14,
+    score: 0,
+    overallScore: 0
+  },
+  right: {
+    x: 770,
+    y: 210,
+    width: 10,
+    height: 150,
+    yD: 14,
+    score: 0,
+    overallScore: 0
+  },
+  ball: {
+    x: 400,
+    y: 30,
+    r: 10,
+    xDelta: 5,
+    yDelta: 5
+  },
+  round: 1
+};
+const left = gameData.left;
+const right = gameData.right;
+const ball = gameData.ball;
+
+
+  const collup = function(object1, object2) {
+    return object1.x-object1.r <= object2.x + object2.width && object1.x + object1.r >= object2.x && object1.y + object1.r === object2.y;
+  };
+  const colldown = function(object1, object2) {
+    return object1.x-object1.r <= object2.x + object2.width && object1.x + object1.r >= object2.x && object1.y - object1.r === object2.y + object2.height;
+  };
+  
+  const collright = function(object1, object2) {
+    return object1.y-object1.r >= object2.y && object1.y+object1.r <= object2.y+object2.height && object1.x-object1.r === object2.x+object2.width;
+  };
+  const collleft = function(object1, object2) {
+    return object1.y-object1.r >= object2.y && object1.y+object1.r <= object2.y+object2.height && object1.x+object1.r === object2.x;
+  };
+
+//////////////////////////////////////////////////////////////////
+ 
+const updateData = function(){
+  if(right.score === 10) {
+    gameData.round++;
+    right.overallScore++;
+    right.score = 0;
+    left.score = 0;
+  } 
+  if(left.score === 10) {
+    gameData.round++;
+    left.overallScore++;
+    right.score = 0;
+    left.score = 0;
+  }
+  if(gameData.round === 2) {
+    left.height = 115;
+    right.height = 115;
+  }
+  if(gameData.round === 3) {
+    left.height = 85;
+    right.height = 85;
+  }
+  
+  const ballupdate = function() {    
+    if(ball.x >= canvas.width - ball.r) {
+        ball.x = ball.r;
+        left.score++;
+      } 
+    if(ball.x <= -ball.r) {
+        ball.x = canvas.width- ball.r;
+        right.score++;
+      }
+    if(ball.y >= canvas.height - ball.r) {
+        ball.yDelta = -ball.yDelta;
+      } 
+    if(ball.y <= ball.r) {
+        ball.yDelta = -ball.yDelta;
+      }
+      
+    if(collup(ball, left) || collup(ball, right) || colldown(ball, left) || colldown(ball, right)) {
+      ball.yDelta = -ball.yDelta;
+    }
+    if(collright(ball, left) || collright(ball, right) || collleft(ball, left) || collleft(ball, right)) {
+      ball.xDelta = -ball.xDelta;
+    }
+    
+    
+      ball.x = ball.x + ball.xDelta;
+      ball.y = ball.y + ball.yDelta;
+    
+  };
+  ballupdate();
+  
+  if(keys[up]) {
+    right.y = right.y - right.yD;
+    if(right.y <= 0) {
+      right.y = 0;
+    } 
+  }
+  if(keys[down]){
+    right.y= right.y + right.yD;
+    if(right.y + right.height >= canvas.height) {
+      right.y = canvas.height - right.height;
+    } 
+  }
+  if(keys[W]) {
+    left.y= left.y - left.yD;
+    if(left.y <= 0) {
+      left.y = 0;
+    } 
+  }
+  if(keys[S]){
+    left.y= left.y + left.yD;
+    if(left.y + left.height >= canvas.height) {
+      left.y = canvas.height - left.height;
+    } 
+  } 
+};
+
+///////////////////////////////////////////////////////////////////////////
+
+const draw = function() {
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  
+  ctx.fillStyle = "#1D3D3F"; //dot line
+  ctx.setLineDash([8, 3]);
+  ctx.beginPath();
+  ctx.moveTo(400,0);
+  ctx.lineTo(400, 470);
+  ctx.stroke();
+  
+  ctx.fillStyle = "#342D35"; //players
+  ctx.fillRect(left.x, left.y, left.width, left.height);
+  ctx.fillRect(right.x, right.y, right.width, right.height);
+  
+  ctx.beginPath(); //ball
+  ctx.arc(ball.x, ball.y, ball.r, 0, 2*Math.PI);
+  ctx.fillStyle = "#D73E3F";
+  ctx.fill();
+  
+  ctx.fillStyle = "#1D3D3F"; //score
+  ctx.font = "30px Arial";
+	ctx.fillText(left.score, 190, 50);
+	ctx.fillText(right.score, 590, 50);
+	let overall = "Round- " + gameData.round +". " + "Overall Score: Left: " + left.overallScore + " : " + right.overallScore + " :Right";
+	ctx.font = "20px Arial";
+	ctx.fillText(overall, 204, 490);
+	ctx.fillText("UP- ↑", 735, 450);
+	ctx.fillText("DOWN- ↓", 700, 470);
+	ctx.fillText("UP- W", 20, 450);
+	ctx.fillText("DOWN- S", 20, 470);
+};
+
+//////////////////////////////////////////////////////////////////////
+
+  const W = 87;
+  const S = 83;
+  const up = 38;
+  const down = 40;
+  const keys = {};
+document.addEventListener('keydown', function(event) {
+  keys[event.keyCode] = true;
+}, false);
+
+document.addEventListener('keyup', function(event) {
+  keys[event.keyCode] = false;
+});
+
+////////////////////////////////////////////////////////////////////////
+
+const loop = function() {
+  if(right.overallScore === 3) {
+    alert("Winner is the Right Player");
+    return;
+  }
+  if(left.overallScore === 3) {
+    alert("Winner is the Left Player");
+    return;
+  }
+  draw();
+  updateData();
+    
+  requestAnimationFrame(loop);
+};
+
+loop();
+
+///////////////////////////////////////////////////////////////////////
+
+</script>
+
+  </body>
+</html>
